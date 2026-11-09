@@ -47,7 +47,14 @@ const existente = spawnSync('gh', ['release', 'view', `v${version}`, '--repo', R
 if (existente.status === 0) salir(`La versión ${version} ya está publicada. Suba el número: npm run publicar -- ${siguiente(version)}`);
 
 console.log(`\n› Creando el instalador ${version} y subiéndolo a GitHub…`);
-const r = spawnSync(process.execPath, [join(raiz, 'scripts', 'instalador.mjs')], { cwd: raiz, stdio: 'inherit', env: { ...conToken, SORTEO_PUBLICAR: '1' } });
+const subir = () => spawnSync(process.execPath, [join(raiz, 'scripts', 'instalador.mjs')], { cwd: raiz, stdio: 'inherit', env: { ...conToken, SORTEO_PUBLICAR: '1' } });
+let r = subir();
+if (r.status !== 0) {
+  // La primera subida a una release nueva a veces choca con GitHub a medio camino; la segunda completa
+  // los archivos que falten y reemplaza los que ya estaban (así se publicó la 1.0.0).
+  console.log('\n› La subida falló; se intenta otra vez…');
+  r = subir();
+}
 if (r.status !== 0) salir('Falló la creación o la subida del instalador.');
 
 // electron-builder deja la release como borrador si no existía: se publica y se le ponen las notas.
