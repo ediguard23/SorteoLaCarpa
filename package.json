@@ -1,0 +1,27 @@
+{
+  "name": "sorteo-la-carpa",
+  "productName": "Sorteo La Carpa",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tickets del sorteo de La Carpa: uno por cada L. 500, impresos en impresora térmica, y sorteo animado en pantalla.",
+  "main": "src/main.js",
+  "author": "La Carpa",
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "electron .",
+    "probar": "electron scripts/probar.js",
+    "logo": "python -I scripts/logo.py",
+    "instalador": "node scripts/instalador.mjs",
+    "publicar": "node scripts/publicar.mjs"
+  },
+  "devDependencies": {
+    "electron": "45.2.1",
+    "electron-builder": "26.15.3"
+  },
+  "allowScripts": {
+    "electron@45.2.1": true
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.11"
+  }
+}

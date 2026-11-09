@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: file:; font-src 'self' file:; style-src 'self' 'unsafe-inline'; script-src 'self'">
+  <title>Sorteo La Carpa</title>
+  <link rel="stylesheet" href="comun.css">
+  <link rel="stylesheet" href="sorteo.css">
+</head>
+<body class="sorteo">
+  <svg class="remolinos" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <g class="giro giro-1"><ellipse cx="800" cy="450" rx="980" ry="420" /></g>
+    <g class="giro giro-2"><ellipse cx="800" cy="450" rx="860" ry="330" /></g>
+    <g class="giro giro-3"><ellipse cx="800" cy="450" rx="1100" ry="520" /></g>
+  </svg>
+  <canvas id="confeti"></canvas>
+
+  <header class="s-arriba">
+    <div class="s-logo"><img src="../../recursos/logo-color.png" alt="La Carpa"></div>
+    <div class="s-titulo">
+      <div class="s-nombre" id="sNombre">Gran Sorteo</div>
+      <div class="s-participan"><span id="sParticipan">0</span> tickets participando</div>
+    </div>
+  </header>
+
+  <main class="s-escenario" id="escenario">
+    <div class="s-premio">
+      <div class="s-premio-num" id="premioNum">1.er premio</div>
+      <div class="s-premio-nombre" id="premioNombre"></div>
+    </div>
+
+    <div class="s-carretes" id="carretes">
+      <div class="carrete"><div class="tira"></div></div>
+      <div class="carrete"><div class="tira"></div></div>
+      <div class="carrete"><div class="tira"></div></div>
+      <div class="carrete"><div class="tira"></div></div>
+    </div>
+
+    <div class="s-ganador oculto" id="ganador">
+      <div class="s-felicidades">¡Felicidades!</div>
+      <div class="s-gnombre" id="gNombre"></div>
+      <div class="s-gdatos" id="gDatos"></div>
+    </div>
+
+    <div class="s-acciones" id="acciones">
+      <button class="s-boton" id="sortear"><span>Sortear</span><kbd>Espacio</kbd></button>
+    </div>
+    <div class="s-acciones oculto" id="accionesDespues">
+      <button class="s-boton s-boton-sec" id="noVino">No se presentó · sortear de nuevo</button>
+      <button class="s-boton" id="siguiente"><span>Siguiente premio</span></button>
+    </div>
+  </main>
+
+  <section class="s-final oculto" id="final">
+    <h1>¡Sorteo terminado!</h1>
+    <p>Gracias a todos por participar</p>
+    <div class="s-lista" id="listaFinal"></div>
+  </section>
+
+  <footer class="s-abajo">
+    <div class="s-ganadores" id="miniGanadores"></div>
+    <div class="s-teclas">Espacio: sortear · F11: pantalla completa · Esc: salir</div>
+  </footer>
+
+  <script src="comun.js"></script>
+  <script src="sorteo.js"></script>
+</body>
+</html>

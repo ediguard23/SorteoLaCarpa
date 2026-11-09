@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: file:; font-src 'self' file:; style-src 'self' 'unsafe-inline'; script-src 'self'; frame-src 'self' about: data: file:">
+  <title>Sorteo La Carpa</title>
+  <link rel="stylesheet" href="comun.css">
+  <link rel="stylesheet" href="principal.css">
+</head>
+<body>
+  <header class="barra">
+    <img class="barra-logo" src="../../recursos/logo-color.png" alt="La Carpa">
+    <div class="barra-sorteo">
+      <span class="barra-etiqueta">Sorteo en curso<span id="premiosSorteo"></span></span>
+      <strong id="nombreSorteo">—</strong>
+    </div>
+    <nav class="pestanas" id="pestanas">
+      <button data-vista="caja" class="activa"><i data-ico="caja"></i>Caja</button>
+      <button data-vista="participantes"><i data-ico="personas"></i>Participantes</button>
+      <button data-vista="ganadores"><i data-ico="trofeo"></i>Ganadores</button>
+      <button data-vista="config"><i data-ico="ajustes"></i>Configuración</button>
+    </nav>
+    <button class="actualizar oculto" id="avisoActualizar"></button>
+    <button class="boton boton-sorteo" id="abrirSorteo"><i data-ico="fiesta"></i> Abrir sorteo</button>
+  </header>
+
+  <main id="contenido">
+    <!-- CAJA -->
+    <section class="vista activa" id="vista-caja">
+      <div class="caja-grid">
+        <form class="tarjeta caja-form" id="formCaja" autocomplete="off">
+          <div class="tarjeta-titulo">
+            <h2>Nuevo cliente</h2>
+            <span class="pista">Un ticket por cada <strong id="montoPorTicket">L. 500</strong> de compra</span>
+          </div>
+          <label class="campo">
+            <span>Nombre del cliente</span>
+            <input name="cliente" id="cliente" maxlength="80" placeholder="Ej. María López" required>
+          </label>
+          <div class="fila-2">
+            <label class="campo">
+              <span>Teléfono</span>
+              <input name="telefono" id="telefono" inputmode="numeric" maxlength="9" placeholder="9876-5678" required>
+            </label>
+            <label class="campo">
+              <span>Monto de la compra</span>
+              <div class="con-prefijo"><b>L.</b><input name="monto" id="monto" inputmode="decimal" placeholder="0.00" required></div>
+            </label>
+          </div>
+          <label class="campo">
+            <span>Descripción <em>(opcional)</em></span>
+            <input name="nota" id="nota" maxlength="80" placeholder="Ej. Factura 3321 · zapatos y ropa">
+          </label>
+          <label class="campo">
+            <span>Cajero en turno</span>
+            <select name="cajero" id="cajero"></select>
+          </label>
+
+          <div class="calculo" id="calculo">
+            <div class="calculo-numero"><span id="cantTickets">0</span><small id="cantTexto">tickets</small></div>
+            <div class="calculo-detalle">
+              <div class="fichas" id="fichas"></div>
+              <p id="faltan">Escriba el monto para calcular los tickets.</p>
+            </div>
+          </div>
+
+          <button class="boton boton-grande" id="botonGenerar" type="submit" disabled>
+            <i data-ico="impresora"></i> Generar e imprimir <kbd>Enter</kbd>
+          </button>
+        </form>
+
+        <div class="caja-lado">
+          <div class="tarjeta resultado oculto" id="resultado"></div>
+          <div class="tarjeta">
+            <div class="tarjeta-titulo"><h3>Así sale el ticket</h3><span class="pista" id="papelTexto">80 mm</span></div>
+            <div class="vista-ticket"><iframe id="previa" title="Vista previa del ticket"></iframe></div>
+          </div>
+          <div class="cifras">
+            <div><b id="cHoy">0</b><span>tickets hoy</span></div>
+            <div><b id="cTotal">0</b><span>tickets en total</span></div>
+            <div><b id="cClientes">0</b><span>clientes</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PARTICIPANTES -->
+    <section class="vista" id="vista-participantes">
+      <div class="tarjeta">
+        <div class="herramientas">
+          <div class="buscador"><i data-ico="buscar"></i><input id="buscar" placeholder="Buscar por código, nombre, teléfono o descripción"></div>
+          <select id="filtroEstado">
+            <option value="todos">Todos</option>
+            <option value="validos">Válidos</option>
+            <option value="anulados">Anulados</option>
+          </select>
+          <span class="pista" id="conteo"></span>
+          <button class="boton boton-claro" id="exportar"><i data-ico="excel"></i> Exportar a Excel</button>
+        </div>
+        <div class="tabla-envoltura">
+          <table class="tabla">
+            <thead><tr><th>Código</th><th>Cliente</th><th>Teléfono</th><th class="der">Compra</th><th>Ticket</th><th>Descripción</th><th>Fecha</th><th>Cajero</th><th>Estado</th><th></th></tr></thead>
+            <tbody id="tablaTickets"></tbody>
+          </table>
+          <div class="vacio oculto" id="sinTickets">Todavía no hay tickets. Los que se generen en Caja aparecen aquí.</div>
+        </div>
+        <button class="boton boton-claro mas oculto" id="verMas">Ver más</button>
+      </div>
+    </section>
+
+    <!-- GANADORES -->
+    <section class="vista" id="vista-ganadores">
+      <div class="tarjeta">
+        <div class="tarjeta-titulo"><h2>Ganadores</h2><span class="pista">Los que salen en la pantalla del sorteo quedan guardados aquí</span></div>
+        <div id="listaGanadores" class="ganadores"></div>
+      </div>
+    </section>
+
+    <!-- CONFIGURACIÓN -->
+    <section class="vista" id="vista-config">
+      <div class="config-bloqueo tarjeta" id="configBloqueo">
+        <div class="candado"><i data-ico="candado"></i></div>
+        <h2>Configuración protegida</h2>
+        <p>Escriba el PIN de administrador para cambiar la configuración.</p>
+        <button class="boton" id="desbloquear">Escribir PIN</button>
+      </div>
+      <div class="config oculto" id="config"></div>
+    </section>
+  </main>
+
+  <!-- Asistente de primera vez -->
+  <div class="asistente oculto" id="asistente"></div>
+
+  <!-- Ventana de PIN / confirmación -->
+  <div class="modal-fondo oculto" id="modal"><div class="modal" id="modalCaja"></div></div>
+  <div class="avisos" id="avisos"></div>
+
+  <script src="comun.js"></script>
+  <script src="formularios.js"></script>
+  <script src="principal.js"></script>
+</body>
+</html>
