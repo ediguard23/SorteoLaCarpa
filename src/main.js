@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
 const { Datos } = require('./datos');
-const { htmlTicket, ticketDeEjemplo, telefonoOculto, fechaHora, papelValido } = require('./ticket');
+const { htmlTicket, ticketDeEjemplo, telefonoOculto, fechaHora, papelValido, anchoImprimible } = require('./ticket');
 const { crearXlsx } = require('./excel');
 const { Actualizador } = require('./actualizador');
 
@@ -72,11 +72,18 @@ async function ventanaTicket(html) {
   return { w, archivo, altoMm: Math.ceil((altoPx * 25.4) / 96) + 2 };
 }
 
+// La página que se le pide al controlador mide el ancho IMPRIMIBLE (80→72, 70→60, 58→48 mm) y el alto
+// exacto del ticket. Si se pide más ancho del que acepta, el controlador lo ignora sin avisar y usa su
+// papel por defecto: en la Star SP700 (máx. 62.7 mm) eso es 62.8 × 3000 mm y gastaba el rollo entero.
+function paginaTicket(impresora, altoMm) {
+  const ancho = anchoImprimible(impresora.papel);
+  return { ancho, alto: altoMm, fondos: impresora.tipo !== 'matriz' };
+}
+
 async function imprimirHtml(html, impresora) {
-  const papel = papelValido(impresora.papel);
   // En las pruebas automáticas cada «impresión» se guarda como PDF en esta carpeta.
   if (process.env.SORTEO_IMPRIMIR_A) {
-    const pdf = await pdfHtml(html, papel);
+    const pdf = await pdfHtml(html, impresora);
     fs.mkdirSync(process.env.SORTEO_IMPRIMIR_A, { recursive: true });
     const n = fs.readdirSync(process.env.SORTEO_IMPRIMIR_A).length + 1;
     const codigo = (html.match(/<title>Ticket (\w+)<\/title>/) || [])[1] || 'x';
@@ -84,15 +91,17 @@ async function imprimirHtml(html, impresora) {
     return;
   }
   const { w, archivo, altoMm } = await ventanaTicket(html);
+  const pagina = paginaTicket(impresora, altoMm);
   try {
     await new Promise((resolve, reject) => {
       w.webContents.print({
         silent: true,
         deviceName: impresora.nombre || '',
-        printBackground: true,
+        // En matriz no hay fondos (la banda va con borde); en térmica la banda negra los necesita.
+        printBackground: pagina.fondos,
         color: false,
         margins: { marginType: 'none' },
-        pageSize: { width: papel * 1000, height: Math.max(altoMm, 60) * 1000 },
+        pageSize: { width: pagina.ancho * 1000, height: pagina.alto * 1000 },
         copies: 1,
       }, (ok, motivo) => (ok ? resolve() : reject(new Error(motivo === 'cancelled' ? 'Impresión cancelada.' : `La impresora no respondió (${motivo || 'error'}).`))));
     });
@@ -102,13 +111,17 @@ async function imprimirHtml(html, impresora) {
   }
 }
 
-async function pdfHtml(html, papel) {
+// Igual que la impresión real (mismo ancho, alto y fondos), para que los PDF de prueba midan lo mismo.
+// Acepta la impresora ({ papel, tipo }) o solo el número de papel (térmica).
+async function pdfHtml(html, impresora) {
+  const imp = typeof impresora === 'object' ? impresora : { papel: impresora, tipo: 'termica' };
   const { w, archivo, altoMm } = await ventanaTicket(html);
+  const pagina = paginaTicket(imp, altoMm);
   try {
     return await w.webContents.printToPDF({
-      printBackground: true,
+      printBackground: pagina.fondos,
       margins: { top: 0, bottom: 0, left: 0, right: 0 },
-      pageSize: { width: papel / 25.4, height: Math.max(altoMm, 60) / 25.4 },
+      pageSize: { width: pagina.ancho / 25.4, height: pagina.alto / 25.4 },
     });
   } finally {
     w.destroy();
@@ -434,7 +447,7 @@ function crearVentana() {
         // Un ticket por cada papel y tipo de impresora, para comprobar que el paquete trae todo.
         for (const [papel, tipo] of [[80, 'termica'], [70, 'matriz'], [58, 'termica']]) {
           const ajustes = { ...datos.ajustes(), impresora: { nombre: 'prueba', papel, tipo } };
-          const pdf = await pdfHtml(htmlTicket({ ticket: ticketDeEjemplo(), ajustes }), papel);
+          const pdf = await pdfHtml(htmlTicket({ ticket: ticketDeEjemplo(), ajustes }), ajustes.impresora);
           fs.writeFileSync(process.env.SORTEO_CAPTURA.replace(/\.png$/, `-${papel}mm.pdf`), pdf);
         }
       }, 2500);

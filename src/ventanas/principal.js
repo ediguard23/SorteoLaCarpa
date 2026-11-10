@@ -41,7 +41,8 @@ async function mostrarPrevia(iframe, ajustes, escrito) {
   const html = await api('vistaPrevia', ajustes || null, escrito || null);
   const pedido = Number((ajustes && ajustes.impresora && ajustes.impresora.papel) || estado.ajustes.impresora.papel);
   const papel = [58, 70].includes(pedido) ? pedido : 80;
-  iframe.style.width = `${Math.round((papel * 96) / 25.4)}px`;
+  // El ticket mide el ancho imprimible del rollo (80→72, 70→60, 58→48 mm), igual que lo que se manda a imprimir.
+  iframe.style.width = `${Math.round(({ 80: 72, 70: 60, 58: 48 }[papel] * 96) / 25.4)}px`;
   iframe.onload = async () => {
     try {
       const doc = iframe.contentDocument;

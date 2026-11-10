@@ -99,7 +99,7 @@ function htmlTicket({ ticket, ajustes, reimpresion = false, prueba = false }) {
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { background: #fff; color: #000; }
   body {
-    width: ${papel}mm; font-family: 'Montserrat', 'Arial', sans-serif; font-size: ${base}pt; font-weight: 600;
+    width: ${ancho}mm; font-family: 'Montserrat', 'Arial', sans-serif; font-size: ${base}pt; font-weight: 600;
     -webkit-print-color-adjust: exact; print-color-adjust: exact; line-height: 1.25;
   }
   .ticket { width: ${ancho}mm; margin: 0 auto; padding: 2mm 0 4mm; text-align: center; }
@@ -159,4 +159,8 @@ function ticketDeEjemplo() {
   };
 }
 
-module.exports = { htmlTicket, ticketDeEjemplo, telefonoOculto, lempiras, fechaHora, papelValido };
+function anchoImprimible(papel) {
+  return MEDIDAS[papelValido(papel)].ancho;
+}
+
+module.exports = { htmlTicket, ticketDeEjemplo, telefonoOculto, lempiras, fechaHora, papelValido, anchoImprimible, MEDIDAS };

@@ -184,8 +184,8 @@ app.whenReady().then(async () => {
     for (const papel of [80, 70, 58]) {
       const aj = { ...datos.ajustes(), impresora: { nombre: 'x', papel, tipo: papel === 70 ? 'matriz' : 'termica' } };
       const t = datos.ticket(deMaria[1].id);
-      fs.writeFileSync(path.join(salida, `ticket-${papel}mm.pdf`), await principal.pdfHtml(htmlTicket({ ticket: t, ajustes: aj }), papel));
-      fs.writeFileSync(path.join(salida, `ticket-${papel}mm-reimpresion.pdf`), await principal.pdfHtml(htmlTicket({ ticket: t, ajustes: aj, reimpresion: true }), papel));
+      fs.writeFileSync(path.join(salida, `ticket-${papel}mm.pdf`), await principal.pdfHtml(htmlTicket({ ticket: t, ajustes: aj }), aj.impresora));
+      fs.writeFileSync(path.join(salida, `ticket-${papel}mm-reimpresion.pdf`), await principal.pdfHtml(htmlTicket({ ticket: t, ajustes: aj, reimpresion: true }), aj.impresora));
       const vt = new BrowserWindow({ show: false, width: Math.round((papel * 96) / 25.4), height: 1000 });
       const archivo = path.join(os.tmpdir(), `ticket-prueba-${papel}.html`);
       fs.writeFileSync(archivo, htmlTicket({ ticket: t, ajustes: aj }));
@@ -200,6 +200,17 @@ app.whenReady().then(async () => {
     comprobar(fs.statSync(path.join(salida, 'ticket-80mm.pdf')).size > 2000, 'PDF del ticket de 80 mm');
     comprobar(fs.statSync(path.join(salida, 'ticket-58mm.pdf')).size > 2000, 'PDF del ticket de 58 mm');
     comprobar(fs.statSync(path.join(salida, 'ticket-70mm.pdf')).size > 2000, 'PDF del ticket de 70 mm para la Star SP700 (matriz de puntos)');
+    // La página tiene que medir el ancho imprimible y el alto del ticket, nunca la página larga del
+    // controlador (en la Star SP700 la de 70 mm se ignoraba y salían 3 m de papel).
+    const medida = (archivo) => {
+      const m = fs.readFileSync(path.join(salida, archivo), 'latin1').match(/\/MediaBox\s*\[\s*0\s+0\s+([\d.]+)\s+([\d.]+)\s*\]/);
+      return m ? [Number(m[1]) * 25.4 / 72, Number(m[2]) * 25.4 / 72] : [0, 0];
+    };
+    for (const [papel, ancho] of [[80, 72], [70, 60], [58, 48]]) {
+      const [w, h] = medida(`ticket-${papel}mm.pdf`);
+      comprobar(Math.abs(w - ancho) < 0.6 && h > 100 && h < 230, `página del papel de ${papel} mm: ${w.toFixed(1)} × ${h.toFixed(1)} mm (ancho ${ancho} y alto del ticket)`);
+    }
+    comprobar(medida('ticket-70mm.pdf')[0] <= 62.7, 'la página de 70 mm cabe en la Star SP700 (máx. 62.7 mm)');
 
     // ---------- Excel ----------
     const xlsx = principal.libroExcel();
