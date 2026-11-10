@@ -1,7 +1,7 @@
 {
   "name": "sorteo-la-carpa",
   "productName": "Sorteo La Carpa",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "description": "Tickets del sorteo de La Carpa: uno por cada L. 500, impresos en impresora térmica, y sorteo animado en pantalla.",
   "main": "src/main.js",
