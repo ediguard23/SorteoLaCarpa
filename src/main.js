@@ -415,8 +415,12 @@ function crearVentana() {
       setTimeout(async () => {
         const img = await ventana.webContents.capturePage();
         fs.writeFileSync(process.env.SORTEO_CAPTURA, img.toPNG());
-        const pdf = await pdfHtml(htmlTicket({ ticket: ticketDeEjemplo(), ajustes: datos.ajustes() }), 80);
-        fs.writeFileSync(process.env.SORTEO_CAPTURA.replace(/\.png$/, '.pdf'), pdf);
+        // Un ticket por cada papel y tipo de impresora, para comprobar que el paquete trae todo.
+        for (const [papel, tipo] of [[80, 'termica'], [70, 'matriz'], [58, 'termica']]) {
+          const ajustes = { ...datos.ajustes(), impresora: { nombre: 'prueba', papel, tipo } };
+          const pdf = await pdfHtml(htmlTicket({ ticket: ticketDeEjemplo(), ajustes }), papel);
+          fs.writeFileSync(process.env.SORTEO_CAPTURA.replace(/\.png$/, `-${papel}mm.pdf`), pdf);
+        }
       }, 2500);
     }
   });
@@ -440,7 +444,7 @@ function abrirVentanaSorteo() {
     x: destino.bounds.x + 40, y: destino.bounds.y + 40, width: Math.min(1600, destino.workArea.width - 80),
     height: Math.min(900, destino.workArea.height - 80), icon: ICONO, title: 'Sorteo La Carpa — Sorteo',
     backgroundColor: '#ff9500', autoHideMenuBar: true, show: false,
-    webPreferences: { preload: path.join(__dirname, 'preload.js'), sandbox: true, contextIsolation: true, autoplayPolicy: 'no-user-gesture-required' },
+    webPreferences: { preload: path.join(__dirname, 'preload.js'), sandbox: true, contextIsolation: true, autoplayPolicy: 'no-user-gesture-required', backgroundThrottling: false },
   });
   ventanaSorteo.removeMenu();
   ventanaSorteo.loadFile(path.join(__dirname, 'ventanas', 'sorteo.html'));

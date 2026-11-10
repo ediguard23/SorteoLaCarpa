@@ -1,9 +1,9 @@
 // Empaqueta el programa y crea el instalador de Windows (NSIS en español, por usuario: no pide administrador).
 // La salida va fuera de OneDrive (%LOCALAPPDATA%\SorteoLaCarpa-empaque) y el instalador se copia a Descargas.
 import { build, Platform } from 'electron-builder';
-import { copyFileSync, mkdirSync, readFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readFileSync, readdirSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const raiz = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
@@ -18,13 +18,26 @@ const config = {
   directories: { output: salida, buildResources: 'build' },
   files: [
     'src/**/*',
-    'recursos/logo-color.png',
-    'recursos/logo-bn-80.png',
-    'recursos/logo-bn-58.png',
-    'recursos/icono.png',
-    'recursos/fuentes/**/*',
+    'recursos/**/*',
+    '!recursos/logo-original.jpg',
     'package.json',
   ],
+  // Antes de armar el instalador (y antes de subir nada) se comprueba que el paquete lleve todos los
+  // recursos de la carpeta y cada logo de ticket que usa el programa. Así se coló la 1.0.0 sin el de 70 mm.
+  afterPack: async (ctx) => {
+    const asar = (await import('@electron/asar')).default;
+    const dentro = new Set(asar.listPackage(join(ctx.appOutDir, 'resources', 'app.asar')).map((f) => f.replace(/\\/g, '/').replace(/^\//, '')));
+    const requeridos = [
+      ...readdirSync(join(raiz, 'recursos'), { recursive: true, withFileTypes: true })
+        .filter((d) => d.isFile() && d.name !== 'logo-original.jpg')
+        .map((d) => relative(raiz, join(d.parentPath, d.name)).replace(/\\/g, '/')),
+      ...[58, 70, 80].map((p) => `recursos/logo-bn-${p}.png`),
+      'src/main.js', 'src/ticket.js', 'src/actualizador.js', 'node_modules/electron-updater/package.json',
+    ];
+    const faltan = [...new Set(requeridos)].filter((f) => !dentro.has(f));
+    if (faltan.length) throw new Error(`Al paquete le faltan archivos: ${faltan.join(', ')}`);
+    console.log(`  • paquete comprobado: ${requeridos.length} archivos necesarios presentes`);
+  },
   asar: true,
   npmRebuild: false,
   nodeGypRebuild: false,
