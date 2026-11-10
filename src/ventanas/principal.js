@@ -37,8 +37,8 @@ $('#pestanas').addEventListener('click', (e) => {
 });
 
 /* ---------------- Vista previa del ticket ---------------- */
-async function mostrarPrevia(iframe, ajustes) {
-  const html = await api('vistaPrevia', ajustes || null);
+async function mostrarPrevia(iframe, ajustes, escrito) {
+  const html = await api('vistaPrevia', ajustes || null, escrito || null);
   const pedido = Number((ajustes && ajustes.impresora && ajustes.impresora.papel) || estado.ajustes.impresora.papel);
   const papel = [58, 70].includes(pedido) ? pedido : 80;
   iframe.style.width = `${Math.round((papel * 96) / 25.4)}px`;
@@ -100,6 +100,23 @@ $('#monto').addEventListener('input', (e) => {
 });
 $('#cliente').addEventListener('input', (e) => e.target.classList.remove('error'));
 
+// La vista previa de Caja muestra lo que se va escribiendo (el código sale como ???? hasta imprimir).
+let temporizadorPrevia;
+function previaCaja() {
+  clearTimeout(temporizadorPrevia);
+  temporizadorPrevia = setTimeout(() => {
+    mostrarPrevia($('#previa'), null, {
+      cliente: $('#cliente').value,
+      telefono: $('#telefono').value,
+      monto: montoEscrito(),
+      nota: $('#nota').value,
+      cajero: $('#cajero').value,
+    });
+  }, 180);
+}
+$('#formCaja').addEventListener('input', previaCaja);
+$('#formCaja').addEventListener('change', previaCaja);
+
 let generando = false;
 $('#formCaja').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -134,6 +151,7 @@ $('#formCaja').addEventListener('submit', async (e) => {
     generando = false;
     boton.innerHTML = `${icono('impresora')} Generar e imprimir <kbd>Enter</kbd>`;
     await refrescar();
+    previaCaja();
     $('#cliente').focus();
   }
 });
@@ -352,7 +370,7 @@ $('#config').addEventListener('click', async (e) => {
       await api('guardarAjustes', pinConfig, leerFormulario(c), p.pin);
       if (p.pin) pinConfig = p.pin;
       await refrescar();
-      mostrarPrevia($('#previa'));
+      previaCaja();
       aviso('Configuración guardada.', 'ok');
       pintarConfig();
     }
@@ -480,7 +498,7 @@ async function asistente() {
       raiz.classList.add('oculto');
       raiz.innerHTML = '';
       await refrescar();
-      mostrarPrevia($('#previa'));
+      previaCaja();
       aviso('¡Listo! Ya puede generar tickets.', 'ok');
       $('#cliente').focus();
     } catch (err) { aviso(err.message, 'mal'); }
@@ -537,5 +555,5 @@ document.addEventListener('keydown', (e) => {
   await refrescar();
   pintarActualizacion(await api('actualizacion'));
   if (!estado.ajustes.configurado) await asistente();
-  else { mostrarPrevia($('#previa')); $('#cliente').focus(); }
+  else { previaCaja(); $('#cliente').focus(); }
 })();

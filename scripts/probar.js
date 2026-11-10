@@ -17,7 +17,7 @@ process.env.SORTEO_IMPRIMIR_A = path.join(salida, 'impresos');
 
 const { app, BrowserWindow } = require('electron');
 const principal = require('../src/main.js');
-const { ALFABETO, PROHIBIDAS } = require('../src/datos');
+const { ALFABETO, LETRAS, NUMEROS, PROHIBIDAS } = require('../src/datos');
 const { htmlTicket } = require('../src/ticket');
 
 const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -107,6 +107,11 @@ app.whenReady().then(async () => {
       poner('cliente', 'María López'); poner('telefono', '98765678'); poner('monto', '1,600'); poner('nota', 'Factura 3321');`);
     const calculo = await js(w, "return document.querySelector('#cantTickets').textContent + ' | ' + document.querySelector('#faltan').textContent;");
     comprobar(calculo.startsWith('3 |') && calculo.includes('400.00'), `cálculo en pantalla: ${calculo}`);
+    // La vista previa tiene que mostrar lo escrito, no el ticket de ejemplo.
+    await esperar(1200);
+    const previa = await js(w, "return document.querySelector('#previa').contentDocument.body.innerText.replace(/\\s+/g, ' ');");
+    const enPrevia = ['María López', '****-5678', 'L. 1,600.00', 'Factura 3321', 'Ticket 1 de 3', '? ? ? ?'];
+    comprobar(enPrevia.every((t) => previa.includes(t)) && !previa.includes('KXRT'), `la vista previa muestra lo que se escribe (${enPrevia.filter((t) => !previa.includes(t)).join(', ') || 'todo'})`);
     await captura(w, '07-caja-calculo');
     await js(w, "document.querySelector('#formCaja').requestSubmit();");
     await esperarQue(w, "!document.querySelector('#resultado').classList.contains('oculto')", 20000);
@@ -142,7 +147,8 @@ app.whenReady().then(async () => {
     const codigos = todos.map((t) => t.codigo);
     comprobar(todos.length >= 1000, `${todos.length} tickets creados en ${Date.now() - t0} ms`);
     comprobar(new Set(codigos).size === codigos.length, 'ningún código repetido');
-    comprobar(codigos.every((c) => c.length === 4 && [...c].every((l) => ALFABETO.includes(l))), 'todos los códigos son 4 letras sin O, I, Q ni Ñ');
+    comprobar(codigos.every((c) => c.length === 4 && [...c].every((l) => ALFABETO.includes(l))), 'todos los códigos son 4 caracteres sin O, 0, I, 1, Q ni Ñ');
+    comprobar(codigos.every((c) => [...c].some((l) => NUMEROS.includes(l)) && [...c].some((l) => LETRAS.includes(l))), `todos los códigos mezclan letras y números (ej. ${codigos.slice(0, 5).join(', ')})`);
     comprobar(codigos.every((c) => !PROHIBIDAS.has(c)), 'ningún código es una palabra fea');
     const porCompra = {};
     for (const t of todos) porCompra[t.compra_id] = (porCompra[t.compra_id] || []).concat(t);

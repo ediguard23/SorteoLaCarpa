@@ -1,7 +1,7 @@
 'use strict';
 /* Pantalla del sorteo: carretes de letras que se frenan uno a uno en el código ganador. */
 
-const LETRAS = 'ABCDEFGHJKLMNPRSTUVWXYZ';
+const LETRAS = 'ABCDEFGHJKLMNPRSTUVWXYZ23456789';
 let info = null;
 let ganadorActual = null;
 let ocupado = false;

@@ -204,9 +204,25 @@ const api = {
     return datos.ganadores();
   },
 
-  vistaPrevia(ajustes) {
+  // Sin «escrito» se usa un ticket de ejemplo (configuración); con él, lo que se está escribiendo en Caja.
+  vistaPrevia(ajustes, escrito) {
     const a = ajustes ? { ...datos.ajustes(), ...limpiarAjustes(ajustes) } : datos.ajustes();
-    return htmlTicket({ ticket: ticketDeEjemplo(), ajustes: a });
+    let ticket = ticketDeEjemplo();
+    if (escrito) {
+      const monto = Number(escrito.monto) || 0;
+      ticket = {
+        codigo: '????',
+        cliente: String(escrito.cliente || '').trim() || '—',
+        telefono: String(escrito.telefono || '').replace(/\D/g, ''),
+        monto,
+        nota: String(escrito.nota || '').trim(),
+        cajero: String(escrito.cajero || '').trim(),
+        creado: new Date().toISOString(),
+        numero: 1,
+        total: Math.max(1, datos.ticketsPorMonto(monto)),
+      };
+    }
+    return htmlTicket({ ticket, ajustes: a });
   },
 
   async imprimirPrueba(impresora, ajustes) {

@@ -3,8 +3,10 @@
 const { DatabaseSync } = require('node:sqlite');
 const crypto = require('node:crypto');
 
-// Sin O, I, Q ni Ñ: impresas en papel térmico se confunden con 0, 1, G o N.
-const ALFABETO = 'ABCDEFGHJKLMNPRSTUVWXYZ';
+// Códigos alfanuméricos de 4 caracteres. Sin O/0, I/1, Q ni Ñ, que impresos se confunden entre sí.
+const LETRAS = 'ABCDEFGHJKLMNPRSTUVWXYZ';
+const NUMEROS = '23456789';
+const ALFABETO = LETRAS + NUMEROS;
 // Combinaciones de 4 letras que no deben salir nunca en un ticket.
 const PROHIBIDAS = new Set([
   'PUTA', 'PUTO', 'PUTS', 'CULO', 'CULA', 'PENE', 'PEDO', 'PEDA', 'CACA', 'MECO', 'JOTO', 'JOTA', 'CAGA',
@@ -129,6 +131,8 @@ class Datos {
     for (let intento = 0; intento < 5000; intento++) {
       let c = '';
       for (let i = 0; i < 4; i++) c += ALFABETO[crypto.randomInt(ALFABETO.length)];
+      // Siempre con letras y números a la vez, para que se vea alfanumérico (ej. K7R4, 3XP9).
+      if (![...c].some((x) => NUMEROS.includes(x)) || ![...c].some((x) => LETRAS.includes(x))) continue;
       if (PROHIBIDAS.has(c)) continue;
       if (!existe.get(c)) return c;
     }
@@ -312,4 +316,4 @@ Datos.SELECT_GANADOR = `
          t.id AS ticket_id, t.codigo, t.numero, t.total, c.cliente, c.telefono, c.monto, c.creado
   FROM ganadores g JOIN tickets t ON t.id = g.ticket_id JOIN compras c ON c.id = t.compra_id`;
 
-module.exports = { Datos, ALFABETO, PROHIBIDAS, soloDigitos };
+module.exports = { Datos, ALFABETO, LETRAS, NUMEROS, PROHIBIDAS, soloDigitos };
